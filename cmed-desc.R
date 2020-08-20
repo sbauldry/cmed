@@ -6,30 +6,20 @@
 rm(list = ls())
 setwd("~/desktop")
 library(tidyverse)
-
+library(ggpubr)
 
 
 ### read prepared data
+pew <- read_csv("cmed-data.csv", col_types = list("sex" = col_factor(), "rac" = col_factor(), 
+                                                  "met" = col_factor(), "reg" = col_factor(),
+                                                  "edu" = col_factor(), "mar" = col_factor(),
+                                                  "nws" = col_factor()))
+summary(pew)
 
 
-         
-
-
-
-  mutate_if(is.numeric, list(~na_if(., 99))) %>% 
-  
-  drop_na() %>%
-  mutate(sex = recode(as_factor(f_sex), Male = "M", Female = "F"),
-         rac = recode(as_factor(f_racethn), "White non-Hispanic" = "W", "Black non-Hispanic" = "B", 
-                      "Hispanic" = "H"),
-         mar = ifelse(f_marital < 3, "M/P", "n M/P"),
-         nws = ifelse(covidfol_w64 == 1, "VC", "n VC"),
-         dis = mh_track_a_w64 + mh_track_b_w64 + mh_track_c_w64 + (5 - mh_track_d_w64) + mh_track_e_w64) 
-
-
-### univariate distributions
+### univariate descriptives
 uni_plot <- function(x, l) {
-  ggplot(pew2, aes_string(x = x)) +
+  ggplot(pew, aes_string(x = x)) +
     geom_bar(aes(y = ..prop.., group = 1)) + 
     ylim(0, 1) +
     labs(y = "proportion respondents", x = l) +
@@ -38,77 +28,58 @@ uni_plot <- function(x, l) {
 
 u1 <- uni_plot(x = "sex", l = "sex")
 u2 <- uni_plot(x = "rac", l = "race")
-u3 <- uni_plot(x = "mar", l = "marital status")
+u3 <- uni_plot(x = "mar", l = "married/partner")
 u4 <- uni_plot(x = "nws", l = "media exposure")
-u5 <- ggplot(pew2, aes(x = dis)) + 
+u5 <- uni_plot(x = "edu", l = "education")
+u6 <- uni_plot(x = "met", l = "metro area")
+u7 <- uni_plot(x = "reg", l = "region")
+
+u8 <- ggplot(pew, aes(x = dis)) + 
   geom_density(alpha = 0.3) +
   labs(x = "psychological distress") +
   theme_light()
 
-ggarrange(u1, u2, u3, u4, u5)
+ggarrange(u1, u2, u3, u4, u5, u6, u7, u8)
 
 
-### bivariate distributions with sociodemographics and media exposure
-bi1_plot <- function(x, l) {
-  pew2 %>%
-    group_by_(x, "nws") %>%
+### distribution of psychological distress by selected factors
+bi1_plot <- function(f, t) {
+  ggplot(data = pew, aes_string(x = "dis", color = f, fill = f)) + 
+    geom_density(alpha = 0.3) +
+    labs(x = "psychological distress") +
+    ggtitle(t) +
+    theme_light()
+}
+
+b1 <- bi1_plot(f = "nws", t = "media exposure")
+b2 <- bi1_plot(f = "sex", t = "sex")
+b3 <- bi1_plot(f = "rac", t = "race")
+b4 <- bi1_plot(f = "mar", t = "married/partner")
+b5 <- bi1_plot(f = "edu", t = "education")
+b6 <- bi1_plot(f = "met", t = "metro area")
+b7 <- bi1_plot(f = "reg", t = "region")
+
+ggarrange(b1, b2, b3, b4, b5, b6, b7)
+
+
+### distribution of media exposure by selected factors
+bi2_plot <- function(f, l) {
+  pew %>%
+    group_by_(f, "nws") %>%
     summarize(N = n()) %>%
     mutate(prp = N/sum(N)) %>%
-    ggplot(aes_string(x = x, y = prp, fill = nws)) +
+    ggplot(aes_string(x = f, y = "prp", fill = "nws")) +
     geom_col(position = "dodge2") +
     labs(y = "proportion respondents", x = l, fill = "media") +
     ylim(0, 1) +
     theme_light()
 }
 
-bi1_plot(x = "sex", l = "sex")
-bi1_plot(x = "rac", l = "race")
+b8  <- bi2_plot(f = "sex", l = "sex")
+b9  <- bi2_plot(f = "rac", l = "race")
+b10 <- bi2_plot(f = "mar", l = "married/partner")
+b11 <- bi2_plot(f = "edu", l = "education")
+b12 <- bi2_plot(f = "met", l = "metro area")
+b13 <- bi2_plot(f = "reg", l = "region")
 
-
-
-nws_by_sex <- pew2 %>%
-  group_by(sex, nws) %>%
-  summarize(N = n()) %>%
-  mutate(prp = N/sum(N))
-nws_by_sex 
-ggplot(nws_by_sex, aes(x = sex, y = prp, fill = nws)) +
-  geom_col(position = "dodge2") +
-  labs(y = "proportion respondents", fill = "media") +
-  ylim(0, 1) +
-  theme_light()
-
-ggplot(pew2, aes(x = sex, fill = nws)) +
-  geom_bar(aes(y = ..prop.., group = nws), position = 'dodge') + 
-  ylim(0, 1) +
-  labs(y = "proportion respondents", fill = "media") +
-  theme_light()
-
-  
-
-### plot distribution of distress by media consumption
-ggplot(data = pew2, aes(x = dis, color = nws, fill = nws)) + 
-  geom_density(alpha = 0.3) +
-  labs(x = "psychological distress") +
-  ggtitle("Density of psychological distress by media consumption") +
-  theme_light()
-
-ggplot(data = pew2, aes(x = dis, color = rac, fill = rac)) + 
-  geom_density(alpha = 0.3) +
-  labs(x = "psychological distress") +
-  ggtitle("Density of psychological distress by race/ethnicity") +
-  theme_light()
-
-ggplot(data = pew2, aes(x = dis, color = sex, fill = sex)) + 
-  geom_density(alpha = 0.3) +
-  labs(x = "psychological distress") +
-  ggtitle("Density of psychological distress by sex") +
-  theme_light()
-
-ggplot(data = pew2, aes(x = dis, color = mar, fill = mar)) + 
-  geom_density(alpha = 0.3) +
-  labs(x = "psychological distress") +
-  ggtitle("Density of psychological distress by marital status") +
-  theme_light()
-
-
-
+ggarrange(b8, b9, b10, b11, b12, b13)
