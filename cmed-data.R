@@ -26,6 +26,13 @@ pew2 <- pew1 %>%
 ### initial sample size
 length(pew2$f_agecat)
 
+### check initial distribution of media exposure
+pew2 %>%
+  group_by(covidfol_w64) %>%
+  summarize(N = n()) %>%
+  mutate(prp = N/sum(N))
+(0.0169 + 0.00246)*100
+
 ### preparing variables for analysis
 ### Marital status: "married" and "living with partner" (MP)
 ###                "divorced", "separated", "widowed", "never been married" (nMP)
@@ -44,9 +51,14 @@ pew3 <- pew2 %>%
          mar = recode(as_factor(mar), "1" = "MP", "0" = "nMP"),
          nws_n = ifelse(covidfol_w64 == 1, 1, 0),
          nws = recode(as_factor(nws_n), "1" = "VC", "0" = "nVC"),
-         dis = mh_track_a_w64 + mh_track_b_w64 + mh_track_c_w64 + (5 - mh_track_d_w64) + mh_track_e_w64,
+         pd1 = mh_track_a_w64,
+         pd2 = mh_track_b_w64,
+         pd3 = mh_track_c_w64,
+         pd4 = 5 - mh_track_d_w64,
+         pd5 = mh_track_e_w64,
+         dis = pd1 + pd2 + pd3 + pd4 + pd5,
          wgt = weight_w64) %>%
-  select(c(sex, rac, met, reg, edu, mar, psy, nws_n, nws, dis, wgt))
+  select(c(sex, rac, met, reg, edu, mar, psy, nws_n, nws, dis, pd1, pd2, pd3, pd4, pd5, wgt))
 summary(pew3)
 
 ### check missing data
