@@ -7,14 +7,61 @@ rm(list = ls())
 setwd("~/desktop")
 library(tidyverse)
 library(ggpubr)
+library(Hmisc)
+library(weights)
 
 
 ### read prepared data
 pew <- read_csv("cmed-data.csv", col_types = list("sex" = col_factor(), "rac" = col_factor(), 
                                                   "met" = col_factor(), "reg" = col_factor(),
                                                   "edu" = col_factor(), "mar" = col_factor(),
-                                                  "nws" = col_factor()))
+                                                  "psy" = col_factor(), "nws" = col_factor()))
 summary(pew)
+
+
+### weighted descriptive statistics
+pew_vc <- pew %>%
+  filter(nws == "VC")
+pew_nvc <- pew %>%
+  filter(nws == "nVC")
+
+# overall sample size and distribution of media exposure
+length(pew$dis)
+table(pew$nws)
+wpct(pew$nws, weight = pew$wgt)
+
+# psychological distress
+mn_dis <- wtd.mean(pew$dis, weights = pew$wgt)
+sd_dis <- sqrt( wtd.var(pew$dis, weights = pew$wgt) )
+
+mn_dis_vc <- wtd.mean(pew_vc$dis, weights = pew_vc$wgt)
+sd_dis_vc <- sqrt( wtd.var(pew_vc$dis, weights = pew_vc$wgt) )
+
+mn_dis_nvc <- wtd.mean(pew_nvc$dis, weights = pew_nvc$wgt)
+sd_dis_nvc <- sqrt( wtd.var(pew_nvc$dis, weights = pew_nvc$wgt) )
+
+c(mn_dis, sd_dis, mn_dis_vc, sd_dis_vc, mn_dis_nvc, sd_dis_nvc)
+
+# covariates
+pr_var <- function(x, y, z) {
+  a <- wpct(x, weight = pew$wgt)
+  b <- wpct(y, weight = pew_vc$wgt)
+  c <- wpct(z, weight = pew_nvc$wgt)
+  c(a, b, c)
+}
+
+pr_var(pew$sex, pew_vc$sex, pew_nvc$sex)
+pr_var(pew$rac, pew_vc$rac, pew_nvc$rac)
+pr_var(pew$edu, pew_vc$edu, pew_nvc$edu)
+
+pr_var(pew$mar, pew_vc$mar, pew_nvc$mar)
+pr_var(pew$met, pew_vc$met, pew_nvc$met)
+pr_var(pew$reg, pew_vc$reg, pew_nvc$reg)
+pr_var(pew$psy, pew_vc$psy, pew_nvc$psy)
+
+
+
+### additional preliminary descriptives -- not reported in paper ###
 
 
 ### univariate descriptives
