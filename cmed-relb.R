@@ -23,7 +23,7 @@ summary(pew)
 pew[, c("pd1", "pd2", "pd3", "pd4", "pd5")] <- lapply(pew[, c("pd1", "pd2", "pd3", "pd4", "pd5")], ordered)
 
 
-### obtain polychoric correlation matrix.
+### obtain polychoric correlation matrix
 pc12 <- polychor(pew$pd1, pew$pd2)
 pc13 <- polychor(pew$pd1, pew$pd3)
 pc14 <- polychor(pew$pd1, pew$pd4)
@@ -37,7 +37,7 @@ pc45 <- polychor(pew$pd4, pew$pd5)
 
 pcm <- rbind( c(1, pc12, pc13, pc14, pc15), c(pc12, 1, pc23, pc24, pc25), 
               c(pc13, pc23, 1, pc34, pc35), c(pc14, pc24, pc34, 1, pc45), 
-              c(pc15, pc25, pc35, pc45, 1))
+              c(pc15, pc25, pc35, pc45, 1) )
 
 
 ### obtain thresholds and factor loadings
