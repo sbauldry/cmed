@@ -15,7 +15,7 @@ library(pbivnorm)
 pew <- read_csv("cmed-data.csv", col_types = list("sex" = col_factor(), "rac" = col_factor(), 
                                                   "met" = col_factor(), "reg" = col_factor(),
                                                   "edu" = col_factor(), "mar" = col_factor(),
-                                                  "psy" = col_factor(), "nws" = col_factor()))
+                                                  "nws" = col_factor()))
 summary(pew)
 
 
