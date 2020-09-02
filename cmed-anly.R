@@ -7,7 +7,6 @@ rm(list = ls())
 setwd("~/desktop")
 library(tidyverse)
 library(broom)
-library(ggpubr)
 
 
 ### read prepared data
@@ -18,116 +17,115 @@ pew <- read_csv("cmed-data.csv", col_types = list("sex" = col_factor(), "rac" = 
 summary(pew)
 
 
-### fit unweighted models and extract estimates
-m1  <- tidy( lm(dis ~ nws + sex + rac + mar + edu + met + reg, data = pew) )
-m2  <- tidy( lm(dis ~ nws + rac + mar + edu + met + reg, data = subset(pew, sex == "M")) )
-m3  <- tidy( lm(dis ~ nws + rac + mar + edu + met + reg, data = subset(pew, sex == "F")) )
-m4  <- tidy( lm(dis ~ nws + sex + mar + edu + met + reg, data = subset(pew, rac == "W")) )
-m5  <- tidy( lm(dis ~ nws + sex + mar + edu + met + reg, data = subset(pew, rac == "B")) )
-m6  <- tidy( lm(dis ~ nws + sex + mar + edu + met + reg, data = subset(pew, rac == "L")) )
-m7  <- tidy( lm(dis ~ nws + sex + rac + edu + met + reg, data = subset(pew, mar == "MP")) )
-m8  <- tidy( lm(dis ~ nws + sex + rac + edu + met + reg, data = subset(pew, mar == "nMP")) )
-m9  <- tidy( lm(dis ~ nws + sex + rac + mar + met + reg, data = subset(pew, edu == "BA+")) )
-m10 <- tidy( lm(dis ~ nws + sex + rac + mar + met + reg, data = subset(pew, edu == "SC")) )
-m11 <- tidy( lm(dis ~ nws + sex + rac + mar + met + reg, data = subset(pew, edu == "HS-")) )
+### set referent categories
+pew$nws <- relevel(pew$nws, ref="nVC")
+pew$sex <- relevel(pew$sex, ref="M")
+pew$reg <- relevel(pew$reg, ref="N")
+pew$met <- relevel(pew$nws, ref="M")
+pew$edu <- relevel(pew$edu, ref="HS-")
 
 
-### combine estimates and standard errors for nws
-est <- rbind( c(1, m1$estimate[2], m1$std.error[2]), c(2, m2$estimate[2], m2$std.error[2]), 
-              c(3, m3$estimate[2], m3$std.error[2]), c(4, m4$estimate[2], m4$std.error[2]),
-              c(5, m5$estimate[2], m5$std.error[2]), c(6, m6$estimate[2], m6$std.error[2]),
-              c(7, m7$estimate[2], m7$std.error[2]), c(8, m8$estimate[2], m8$std.error[2]),
-              c(9, m9$estimate[2], m9$std.error[2]), c(10, m10$estimate[2], m10$std.error[2]),
-              c(11, m11$estimate[2], m11$std.error[2]) )
+### model for overall sample
+m1 <- tidy( lm(dis ~ nws + sex + rac + mar + edu + met + reg, data = pew, weights = wgt) )
+
+# graph estimates for Figure 1
+m1_prep <- m1 %>%
+  filter(term %nin% "(Intercept)") %>%
+  mutate(lb = estimate - 1.96*std.error,
+         ub = estimate + 1.96*std.error,
+         id = c(11:1))
+
+fig1 <- ggplot(m1_prep, aes(x = factor(id), y = estimate, ymin = lb, ymax = ub)) +
+  geom_pointrange() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "blue") +
+  scale_x_discrete(labels = c("Region: South", "Region: West", "Region: Midwest", 
+                              "Not metropolitan area", "Education: College degree +", "Education: Some college",
+                              "Married/partner", "Race/Ethnicity: Black", "Race/Ethnicity: Latinx",
+                              "Woman", "Media exposure: Very close")) +
+  labs(x = "", y = "unstandardized estimate") +
+  coord_flip() +
+  theme_light() +
+  theme(text = element_text(size = 15))
+fig1
+ggsave("fig1.png", plot = fig1, width = 7.8, height = 4.32)
+
+# list estimates
+m1
+
+
+### models stratifying by various subsamples
+m2 <- tidy( lm(dis ~ nws + rac + mar + edu + met + reg, data = subset(pew, sex == "F"), weights = wgt) )
+m3 <- tidy( lm(dis ~ nws + rac + mar + edu + met + reg, data = subset(pew, sex == "M"), weights = wgt) )
+m4 <- tidy( lm(dis ~ nws + sex + mar + edu + met + reg, data = subset(pew, rac == "W"), weights = wgt) )
+m5 <- tidy( lm(dis ~ nws + sex + mar + edu + met + reg, data = subset(pew, rac == "B"), weights = wgt) )
+m6 <- tidy( lm(dis ~ nws + sex + mar + edu + met + reg, data = subset(pew, rac == "L"), weights = wgt) )
+m7 <- tidy( lm(dis ~ nws + sex + rac + mar + met + reg, data = subset(pew, edu == "BA+"), weights = wgt) )
+m8 <- tidy( lm(dis ~ nws + sex + rac + mar + met + reg, data = subset(pew, edu == "SC"), weights = wgt) )
+m9 <- tidy( lm(dis ~ nws + sex + rac + mar + met + reg, data = subset(pew, edu == "HS-"), weights = wgt) )
+
+# combine estimates and standard errors for nws
+est <- rbind( c(8, m2$estimate[2], m2$std.error[2]), c(7, m3$estimate[2], m3$std.error[2]), 
+              c(6, m4$estimate[2], m4$std.error[2]), c(5, m5$estimate[2], m5$std.error[2]),
+              c(4, m6$estimate[2], m6$std.error[2]), c(3, m7$estimate[2], m7$std.error[2]),
+              c(2, m8$estimate[2], m8$std.error[2]), c(1, m9$estimate[2], m9$std.error[2]) )
 colnames(est) <- c("id", "est", "se")
 est <- as_tibble(est) %>%
   mutate(lb = est - 1.96*se,
          ub = est + 1.96*se)
 
-
-### graph estimates
-g1 <- ggplot(est, aes(x = factor(id), y = est, ymin = lb, ymax = ub)) +
+# graph estimates for Figure 2
+fig2 <- ggplot(est, aes(x = factor(id), y = est, ymin = lb, ymax = ub)) +
   geom_pointrange() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "blue") +
-  labs(title = "Distress on media exposure", subtitle = "unweighted estimates", 
-       x = "", y = "estimate", caption = "Unstandardized estimates with 95% CIs.") +
-  scale_x_discrete(labels = c("all", "men", "women", "white", "black", "latinx", 
-                              "married/partner", "not married/partner", "college degree or more", 
-                              "some college", "high school or less")) +
+  geom_hline(yintercept = 0.6, linetype = "dashed", color = "red") +
+  geom_text(x = 0.7, y = 1.3, label = "average association") +
+  labs(x = "", y = "unstandardized estimate") +
+  scale_x_discrete(labels = c("Education: High school -", "Education: Some college", "Education: College degree +", 
+                              "Race/Ethnicity: Latinx", "Race/Ethnicity: Black", "Race/Ethnicity: White", 
+                              "Gender: Men", "Gender: Women")) +
   coord_flip() +
-  theme_light()
+  theme_light() +
+  theme(text = element_text(size = 15))
+fig2
+ggsave("fig2.png", plot = fig2, width = 7.8, height = 4.32)
 
 
-### fit weighted models and extract estimates
-wm1  <- tidy( lm(dis ~ nws + sex + rac + mar + edu + met + reg, data = pew, weights = wgt) )
-wm2  <- tidy( lm(dis ~ nws + rac + mar + edu + met + reg, data = subset(pew, sex == "M"), weights = wgt) )
-wm3  <- tidy( lm(dis ~ nws + rac + mar + edu + met + reg, data = subset(pew, sex == "F"), weights = wgt) )
-wm4  <- tidy( lm(dis ~ nws + sex + mar + edu + met + reg, data = subset(pew, rac == "W"), weights = wgt) )
-wm5  <- tidy( lm(dis ~ nws + sex + mar + edu + met + reg, data = subset(pew, rac == "B"), weights = wgt) )
-wm6  <- tidy( lm(dis ~ nws + sex + mar + edu + met + reg, data = subset(pew, rac == "L"), weights = wgt) )
-wm7  <- tidy( lm(dis ~ nws + sex + rac + edu + met + reg, data = subset(pew, mar == "MP"), weights = wgt) )
-wm8  <- tidy( lm(dis ~ nws + sex + rac + edu + met + reg, data = subset(pew, mar == "nMP"), weights = wgt) )
-wm9  <- tidy( lm(dis ~ nws + sex + rac + mar + met + reg, data = subset(pew, edu == "BA+"), weights = wgt) )
-wm10 <- tidy( lm(dis ~ nws + sex + rac + mar + met + reg, data = subset(pew, edu == "SC"), weights = wgt) )
-wm11 <- tidy( lm(dis ~ nws + sex + rac + mar + met + reg, data = subset(pew, edu == "HS-"), weights = wgt) )
-
-
-### combine estimates and standard errors for nws
-west <- rbind( c(1, wm1$estimate[2], wm1$std.error[2]), c(2, wm2$estimate[2], wm2$std.error[2]), 
-              c(3, wm3$estimate[2], wm3$std.error[2]), c(4, wm4$estimate[2], wm4$std.error[2]),
-              c(5, wm5$estimate[2], wm5$std.error[2]), c(6, wm6$estimate[2], wm6$std.error[2]),
-              c(7, wm7$estimate[2], wm7$std.error[2]), c(8, wm8$estimate[2], wm8$std.error[2]),
-              c(9, wm9$estimate[2], wm9$std.error[2]), c(10, wm10$estimate[2], wm10$std.error[2]),
-              c(11, wm11$estimate[2], wm11$std.error[2]) )
-colnames(west) <- c("id", "est", "se")
-west <- as_tibble(west) %>%
-  mutate(lb = est - 1.96*se,
-         ub = est + 1.96*se)
-
-
-### graph estimates
-g2 <- ggplot(west, aes(x = factor(id), y = est, ymin = lb, ymax = ub)) +
-  geom_pointrange() +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "blue") +
-  labs(title = "Distress on media exposure", subtitle = "weighted estimates", 
-       x = "", y = "estimate", caption = "Unstandardized estimates with 95% CIs.") +
-  scale_x_discrete(labels = c("all", "men", "women", "white", "black", "latinx", 
-                              "married/partner", "not married/partner", "college degree or more", 
-                              "some college", "high school or less")) +
-  coord_flip() +
-  theme_light()
-
-fig1 <- ggarrange(g1, g2)
-ggsave("fig1.pdf", plot = fig1)
-
-
-
-### test for potential race/ethnicity and education differences
-dt <- function(i,j) {
-  diff <- abs(west[i,2] - west[j,2])
-  se   <- sqrt(west[i,3]^2 + west[j,3]^2)
-  out  <- cbind(diff, se, diff/se)
-  colnames(out) <- c("diff", "se", "t")
+### statistical tests for differences
+dt <- function(i, j) {
+  diff <- abs(est[i,2] - est[j,2])
+  se   <- sqrt(est[i,3]^2 + est[j,3]^2)
+  zs   <- diff/se
+  pv   <- 2*(1 - pnorm( zs[[1]] ))
+  out  <- cbind(diff, se, zs, pv)
+  colnames(out) <- c("diff", "se", "zs", "pv")
   print(out)
 }
 
-dt(4,5)   # white - black
-dt(4,6)   # white - latinx
-dt(5,6)   # black - latinx
-dt(9,10)  # ba+ - sc
-dt(9,11)  # ba+ - hs-
-dt(10,11) # sc - hs-
+dt(1, 2) # men - women
+dt(3, 4) # white - black
+dt(3, 5) # white - latinx
+dt(4, 5) # black - latinx
+dt(6, 7) # ba+ - sc
+dt(6, 8) # ba+ - hs
+dt(7, 8) # sc - hs
 
 
-### Check weights for race/ethnicity and education
-chk_wgt <- function(x) {
-  pew %>%
-    group_by_at(x) %>%
-    summarize(mean_wgt = mean(wgt))
-}
+### Check weights for gender, race/ethnicity, and education
 
-chk_wgt("rac") # down-weighting latinx and up-weighting black on average
-chk_wgt("edu") # down-weighting ba+ and up-weighting hs- on average
+# slight down-weighting for men
+pew %>%
+  group_by(sex) %>%
+  dplyr::summarize(mean_wgt = mean(wgt))
+
+# down-weighting latinx & up-weighting black
+pew %>%
+  group_by(rac) %>%
+  dplyr::summarize(mean_wgt = mean(wgt))
+
+# substantial up-weighting HS- & down-weighting BA+
+pew %>%
+  group_by(edu) %>%
+  dplyr::summarize(mean_wgt = mean(wgt))
 
 # histogram shows outlier weight, reran models excluding and same pattern of results
 ggplot(data = subset(pew, rac == "L"), mapping = aes(x = wgt)) +

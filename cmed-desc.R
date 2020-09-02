@@ -15,7 +15,7 @@ library(weights)
 pew <- read_csv("cmed-data.csv", col_types = list("sex" = col_factor(), "rac" = col_factor(), 
                                                   "met" = col_factor(), "reg" = col_factor(),
                                                   "edu" = col_factor(), "mar" = col_factor(),
-                                                  "psy" = col_factor(), "nws" = col_factor()))
+                                                  "nws" = col_factor()))
 summary(pew)
 
 
@@ -57,7 +57,8 @@ pr_var(pew$edu, pew_vc$edu, pew_nvc$edu)
 pr_var(pew$mar, pew_vc$mar, pew_nvc$mar)
 pr_var(pew$met, pew_vc$met, pew_nvc$met)
 pr_var(pew$reg, pew_vc$reg, pew_nvc$reg)
-pr_var(pew$psy, pew_vc$psy, pew_nvc$psy)
+
+
 
 
 
