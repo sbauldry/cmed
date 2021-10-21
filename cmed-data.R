@@ -1,74 +1,72 @@
 ### Purpose: prepare data for analysis of covid media exposure and psychological distress
 ### Author: S Bauldry
-### Date: August 12, 2020
+### Date: October 19, 2020
 
 ### set working directory and load packages
-rm(list = ls())
 setwd("~/desktop")
 library(tidyverse)
 library(haven)
 
-
 ### read Pew data provided by Kevin
 pew1 <- read_stata("PEWCOVID.dta")
 
+### prepare variables for analysis
+vars <- c("f_agecat", "f_sex", "f_racethn", "f_marital", "covidfol_w64", 
+          "mh_track_a_w64", "mh_track_b_w64", "mh_track_c_w64", 
+          "mh_track_d_w64", "mh_track_e_w64", "weight_w64", "f_metro", 
+          "f_cregion", "f_educcat")
 
-### extract analysis variables and select analysis sample
-### analysis sample: age 65+, white/black/latinx
-vars <- c("f_agecat", "f_sex", "f_racethn", "f_marital", "covidfol_w64", "mh_track_a_w64", 
-          "mh_track_b_w64", "mh_track_c_w64", "mh_track_d_w64", "mh_track_e_w64", "weight_w64",
-          "f_metro", "f_cregion", "f_educcat")
 pew2 <- pew1 %>%
-  select(all_of(vars)) %>%  
-  filter(f_agecat == 4) %>% 
-  filter(f_racethn < 4) 
-
-### initial sample size
-length(pew2$f_agecat)
-
-### check initial distribution of media exposure
-pew2 %>%
-  group_by(covidfol_w64) %>%
-  summarize(N = n()) %>%
-  mutate(prp = N/sum(N))
-(0.0169 + 0.00246)*100
-
-### preparing variables for analysis
-### Marital status: "married" and "living with partner" (MP)
-###                "divorced", "separated", "widowed", "never been married" (nMP)
-### Media exposure: How closely have you been following the news about the outbreak
-###                 "very closely" (VC)
-###                 "fairly closely", "not too closely", "not at all closely" (nVC)
-pew3 <- pew2 %>%
+  select(all_of(vars)) %>%
   mutate_if(is.numeric, list(~na_if(., 99))) %>%
-  mutate(sex = recode(as_factor(f_sex), "Male" = "M", "Female" = "F"),
-         rac = recode(as_factor(f_racethn), "White non-Hispanic" = "W", "Black non-Hispanic" = "B", "Hispanic" = "L"),
-         met = recode(as_factor(f_metro), "Metropolitan" = "M", "Non-metropolitan" = "nM"),
-         reg = recode(as_factor(f_cregion), "Northeast" = "N", "Midwest" = "M", "South" = "S", "West" = "W"),
-         edu = recode(as_factor(f_educcat), "College graduate+" = "BA+", "Some College" = "SC", "H.S. graduate or less" = "HS-"),
-         mar = ifelse(f_marital < 3, 1, 0),
-         mar = recode(as_factor(mar), "1" = "MP", "0" = "nMP"),
-         nws_n = ifelse(covidfol_w64 == 1, 1, 0),
-         nws = recode(as_factor(nws_n), "1" = "VC", "0" = "nVC"),
-         pd1 = mh_track_a_w64,
-         pd2 = mh_track_b_w64,
-         pd3 = mh_track_c_w64,
-         pd4 = 5 - mh_track_d_w64,
-         pd5 = mh_track_e_w64,
-         dis = pd1 + pd2 + pd3 + pd4 + pd5,
-         wgt = weight_w64) %>%
-  select(c(sex, rac, met, reg, edu, mar, nws_n, nws, dis, pd1, pd2, pd3, pd4, pd5, wgt))
-summary(pew3)
-
-### check missing data
-### listwise delete due to minimal missing data (< 15 for covariates and 37 for psychological distress)
-summary(pew3)
-pew4 <- pew3 %>%
+  mutate(
+    
+    ### psychological distress
+    dis = mh_track_a_w64 + mh_track_b_w64 + mh_track_c_w64 +
+          (5 - mh_track_d_w64) + mh_track_e_w64,
+    
+    ### media consumption
+    nws = ifelse(covidfol_w64 == 1, 1, 0), # 1 = very close
+    
+    ### sociodemographic covariates
+    rce = case_when(
+      f_racethn == 2 ~ 1,              # non-Hispanic Black
+      f_racethn == 3 ~ 2,              # Hispanic
+      f_racethn == 1 ~ 3,              # non-Hispanic White
+      f_racethn == 4 ~ 4),             # other race/ethnicity
+    fem = ifelse(f_sex == 2, 1, 0),    # 1 = female
+    age = f_agecat,                    # 1 = 18-29, 2 = 30-49, 3 = 50-64, 4 = 65+
+    met = ifelse(f_metro == 1, 1, 0),  # 1 = urban
+    reg = f_cregion,                   # 1 = northeast, 2 = midwest, 3 = south, 4 = west
+    mar = ifelse(f_marital < 3, 1, 0), # 1 = married or cohabiting
+    edu = 4 - f_educcat) %>%           # 1 = HS or less, 2 = some college, 3 = BA+
+  
+  select(c(dis, nws, rce, fem, age, met, reg, mar, edu, weight_w64))
+    
+### select analysis sample for preliminary analysis of media consumption
+pew_full <- pew2 %>%
   drop_na()
 
-### analysis sample size
-length(pew4$sex)
+### select analysis sample for primary analysis
+pew_old <- pew2 %>%
+  filter(age == 4 & rce != 4) %>%
+  select(-age)
 
+# baseline sample
+length(pew_old$weight_w64)
+
+# drop missing psychological distress
+pew_old <- pew_old %>% drop_na(dis)
+length(pew_old$weight_w64)
+
+# drop missing media consumption
+pew_old <- pew_old %>% drop_na(nws)
+length(pew_old$weight_w64)
+
+# drop missing sociodemographic covariates (marital status and education)
+pew_old <- pew_old %>% drop_na(c(mar, edu))
+length(pew_old$weight_w64)
 
 ### save data for analysis
-write_csv(pew4, "cmed-data.csv")
+write_csv(pew_full, "cmed-full-data.csv")
+write_csv(pew_old, "cmed-old-data.csv")
