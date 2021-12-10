@@ -1,71 +1,83 @@
-### Purpose: prepare data for analysis of covid media exposure and psychological distress
-### Author: S Bauldry
-### Date: October 19, 2020
+### Purpose: Prepare data for analysis of covid media consumption and distress
+### Author:  S Bauldry
+### Date:    December 9, 2020
 
-### set working directory and load packages
 setwd("~/desktop")
 library(tidyverse)
+library(ggpubr)
 library(haven)
 
-### read Pew data provided by Kevin
-pew1 <- read_stata("PEWCOVID.dta")
 
-### prepare variables for analysis
-vars <- c("f_agecat", "f_sex", "f_racethn", "f_marital", "covidfol_w64", 
-          "mh_track_a_w64", "mh_track_b_w64", "mh_track_c_w64", 
-          "mh_track_d_w64", "mh_track_e_w64", "weight_w64", "f_metro", 
-          "f_cregion", "f_educcat")
+### Extract analysis variables from ATP Wave 64
+vars <- c("F_AGECAT", "F_SEX", "F_RACETHN", "F_MARITAL", "F_METRO", 
+          "F_CREGION", "F_EDUCCAT", "COVIDFOL_W64", "MH_TRACK_a_W64", 
+          "MH_TRACK_b_W64", "MH_TRACK_c_W64", "MH_TRACK_d_W64", 
+          "MH_TRACK_e_W64", "WEIGHT_W64") 
 
+pew1 <- read_sav("ATP W64.sav") %>%
+  dplyr::select( all_of(vars) ) %>%
+  mutate_if(is.numeric, ~ na_if(., 99))
+
+
+### Prepare variables for analysis
 pew2 <- pew1 %>%
-  select(all_of(vars)) %>%
-  mutate_if(is.numeric, list(~na_if(., 99))) %>%
   mutate(
     
     ### psychological distress
-    dis = mh_track_a_w64 + mh_track_b_w64 + mh_track_c_w64 +
-          (5 - mh_track_d_w64) + mh_track_e_w64,
+    dis = MH_TRACK_a_W64 + MH_TRACK_b_W64 + MH_TRACK_c_W64 +
+          (5 - MH_TRACK_d_W64) + MH_TRACK_e_W64,
     
     ### media consumption
-    nws = ifelse(covidfol_w64 == 1, 1, 0), # 1 = very close
+    nws = ifelse(COVIDFOL_W64 == 1, 1, 0), # 1 = very close
     
     ### sociodemographic covariates
     rce = case_when(
-      f_racethn == 2 ~ 1,              # non-Hispanic Black
-      f_racethn == 3 ~ 2,              # Hispanic
-      f_racethn == 1 ~ 3,              # non-Hispanic White
-      f_racethn == 4 ~ 4),             # other race/ethnicity
-    fem = ifelse(f_sex == 2, 1, 0),    # 1 = female
-    age = f_agecat,                    # 1 = 18-29, 2 = 30-49, 3 = 50-64, 4 = 65+
-    met = ifelse(f_metro == 1, 1, 0),  # 1 = urban
-    reg = f_cregion,                   # 1 = northeast, 2 = midwest, 3 = south, 4 = west
-    mar = ifelse(f_marital < 3, 1, 0), # 1 = married or cohabiting
-    edu = 4 - f_educcat) %>%           # 1 = HS or less, 2 = some college, 3 = BA+
+      F_RACETHN == 2 ~ 1,              # non-Hispanic Black
+      F_RACETHN == 3 ~ 2,              # Hispanic
+      F_RACETHN == 1 ~ 3,              # non-Hispanic White
+      F_RACETHN == 4 ~ 4),             # other race/ethnicity
+    fem = ifelse(F_SEX == 2, 1, 0),    # 1 = female
+    age = F_AGECAT,                    # 1 = 18-29, 2 = 30-49, 3 = 50-64, 4 = 65+
+    met = ifelse(F_METRO == 1, 1, 0),  # 1 = urban
+    reg = F_CREGION,                   # 1 = northeast, 2 = midwest, 3 = south, 4 = west
+    mar = ifelse(F_MARITAL < 3, 1, 0), # 1 = married or cohabiting
+    edu = 4 - F_EDUCCAT,               # 1 = HS or less, 2 = some college, 3 = BA+
+    
+    ### weights
+    wgt = WEIGHT_W64) %>%
   
-  select(c(dis, nws, rce, fem, age, met, reg, mar, edu, weight_w64))
+  select(c(dis, nws, rce, fem, age, met, reg, mar, edu, wgt))
     
 ### select analysis sample for preliminary analysis of media consumption
+### rescale weights
 pew_full <- pew2 %>%
-  drop_na()
+  drop_na() %>%
+  mutate(rwt = wgt/sum(wgt)*n()) %>%
+  select(-wgt)
+dim(pew_full)
 
 ### select analysis sample for primary analysis
 pew_old <- pew2 %>%
   filter(age == 4 & rce != 4) %>%
   select(-age)
-
-# baseline sample
-length(pew_old$weight_w64)
+dim(pew_old)
 
 # drop missing psychological distress
 pew_old <- pew_old %>% drop_na(dis)
-length(pew_old$weight_w64)
+dim(pew_old)
 
 # drop missing media consumption
 pew_old <- pew_old %>% drop_na(nws)
-length(pew_old$weight_w64)
+dim(pew_old)
 
 # drop missing sociodemographic covariates (marital status and education)
 pew_old <- pew_old %>% drop_na(c(mar, edu))
-length(pew_old$weight_w64)
+dim(pew_old)
+
+### rescale weights
+pew_old <- pew_old %>%
+  mutate(rwt = wgt/sum(wgt)*n()) %>%
+  select(-wgt)
 
 ### save data for analysis
 write_csv(pew_full, "cmed-full-data.csv")
