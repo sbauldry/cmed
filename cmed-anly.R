@@ -94,6 +94,9 @@ m7 <- lm(dis ~ nws + mar + met + reg + fem + rce, data = subset(pew_old, edu == 
 m8 <- lm(dis ~ nws + mar + met + reg + fem + rce, data = subset(pew_old, edu == 2), weights = rwt)
 m9 <- lm(dis ~ nws + mar + met + reg + fem + rce, data = subset(pew_old, edu == 1), weights = rwt)
 
+m10 <- lm(dis ~ nws + met + reg + fem + rce + edu, data = subset(pew_old, mar == 1), weights = rwt)
+m11 <- lm(dis ~ nws + met + reg + fem + rce + edu, data = subset(pew_old, mar == 0), weights = rwt)
+
 # prepare estimate for figure
 ge <- function(mod, i) {
   e <- mod$coefficients
@@ -103,15 +106,16 @@ ge <- function(mod, i) {
   c <- cbind(id = i, est = e[[2]], lb = l, ub = u)
   return(c)
 }
-est <- data.frame( rbind( ge(m2, 8), ge(m3, 7), ge(m4, 6), ge(m5, 5), 
-                          ge(m6, 4), ge(m7, 3), ge(m8, 2), ge(m9, 1)) )
+est <- data.frame( rbind( ge(m2, 10), ge(m3, 9), ge(m4, 8), ge(m5, 7), 
+                          ge(m6, 6), ge(m7, 5), ge(m8, 4), ge(m9, 3),
+                          ge(m10, 2), ge(m11, 1) ) )
 
 # graph estimates for figure 2
 fig2 <- ggplot(est, aes(x = factor(id), y = est, ymin = lb, ymax = ub)) +
   geom_pointrange() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "blue") +
   labs(x = "", y = "unstandardized estimate") +
-  scale_x_discrete(labels = c("High school", "Some college", "College degree", 
+  scale_x_discrete(labels = c("Not married", "Mar/Coh", "High school", "Some college", "College degree", 
                               "White", "Black", "Hispanic", 
                               "Men", "Women")) +
   coord_flip() +
@@ -139,6 +143,7 @@ dt(4, 5) # hispanic - white
 dt(6, 7) # ba - sc
 dt(6, 8) # ba - hs
 dt(7, 8) # sc - hs
+dt(9, 10) # mar - not mar
 
 
 ### Creating a figure of predicted psychological distress
@@ -195,10 +200,13 @@ pr_wht <- pdis(pew_old, rce, 3)
 pr_hs  <- pdis(pew_old, edu, 1)
 pr_sc  <- pdis(pew_old, edu, 2)
 pr_ba  <- pdis(pew_old, edu, 3)
+pr_nm  <- pdis(pew_old, mar, 0)
+pr_mr  <- pdis(pew_old, mar, 1)
 
 # gathering estimates for graphing
-id <- 1:23
-prdis <- data.frame( cbind( id, rbind(pr_hs, c(0, 0, 0), pr_sc, c(0, 0, 0), 
+id <- 1:29
+prdis <- data.frame( cbind( id, rbind(pr_nm, c(0, 0, 0), pr_mr, c(0, 0, 0), 
+                                      pr_hs, c(0, 0, 0), pr_sc, c(0, 0, 0), 
                                       pr_ba, c(0, 0, 0), pr_wht, c(0, 0, 0), 
                                       pr_blk, c(0, 0, 0), pr_hsp, c(0, 0, 0), 
                                       pr_mal, c(0, 0, 0), pr_fem) ) )
@@ -210,7 +218,9 @@ fig3 <- ggplot(prdis, aes(x = factor(id), y = est, ymin = est - 1.96*se, ymax = 
   geom_pointrange() +
   geom_hline(yintercept = wmdis, linetype = "dashed", color = "blue") +
   labs(x = "", y = "predicted psychological distress") +
-  scale_x_discrete(labels = c("not VC", "High school -- VC", "", 
+  scale_x_discrete(labels = c("not VC", "Not Married -- VC", "",
+                              "not VC", "Married/Cohabit -- VC", "",
+                              "not VC", "High school -- VC", "", 
                               "not VC", "Some college -- VC", "",
                               "not VC", "College degree -- VC", "", 
                               "not VC", "White -- VC", "",
