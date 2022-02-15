@@ -4,6 +4,7 @@
 
 setwd("~/desktop")
 library(tidyverse)
+library(ggpubr)
 library(margins)
 library(broom)
 library(weights)
@@ -219,7 +220,7 @@ fig3 <- ggplot(prdis, aes(x = factor(id), y = est, ymin = est - 1.96*se, ymax = 
   geom_hline(yintercept = wmdis, linetype = "dashed", color = "blue") +
   labs(x = "", y = "predicted psychological distress") +
   scale_x_discrete(labels = c("not VC", "Not Married -- VC", "",
-                              "not VC", "Married/Cohabit -- VC", "",
+                              "not VC", "Mar/Coh -- VC", "",
                               "not VC", "High school -- VC", "", 
                               "not VC", "Some college -- VC", "",
                               "not VC", "College degree -- VC", "", 
@@ -234,4 +235,9 @@ fig3 <- ggplot(prdis, aes(x = factor(id), y = est, ymin = est - 1.96*se, ymax = 
   theme(text = element_text(size = 15))
 fig3
 ggsave("fig3.png", plot = fig3)
+
+# combining figures 2 and 3
+fig <- ggarrange(fig2, fig3) 
+fig
+ggsave("fig4.png", plot = fig)
 
