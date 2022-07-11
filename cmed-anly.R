@@ -115,7 +115,7 @@ est <- data.frame( rbind( ge(m2, 10), ge(m3, 9), ge(m4, 8), ge(m5, 7),
 fig2 <- ggplot(est, aes(x = factor(id), y = est, ymin = lb, ymax = ub)) +
   geom_pointrange() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "blue") +
-  labs(x = "", y = "unstandardized estimate") +
+  labs(x = "", y = "VC media consumption estimate", title = "Panel A") +
   scale_x_discrete(labels = c("Not married", "Mar/Coh", "High school", "Some college", "College degree", 
                               "White", "Black", "Hispanic", 
                               "Men", "Women")) +
@@ -218,7 +218,7 @@ wmdis <- weighted.mean(pew_old$dis, weight = rwt)
 fig3 <- ggplot(prdis, aes(x = factor(id), y = est, ymin = est - 1.96*se, ymax =  est + 1.96*se)) +
   geom_pointrange() +
   geom_hline(yintercept = wmdis, linetype = "dashed", color = "blue") +
-  labs(x = "", y = "predicted psychological distress") +
+  labs(x = "", y = "predicted psychological distress", title = "Panel B") +
   scale_x_discrete(labels = c("not VC", "Not Married -- VC", "",
                               "not VC", "Mar/Coh -- VC", "",
                               "not VC", "High school -- VC", "", 
