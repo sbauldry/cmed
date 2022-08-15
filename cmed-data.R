@@ -1,18 +1,17 @@
 ### Purpose: Prepare data for analysis of covid media consumption and distress
 ### Author:  S Bauldry
-### Date:    December 9, 2020
+### Date:    August 14, 2022
 
 setwd("~/desktop")
 library(tidyverse)
-library(ggpubr)
 library(haven)
 
 
 ### Extract analysis variables from ATP Wave 64
 vars <- c("F_AGECAT", "F_SEX", "F_RACETHN", "F_MARITAL", "F_METRO", 
-          "F_CREGION", "F_EDUCCAT", "COVIDFOL_W64", "MH_TRACK_a_W64", 
-          "MH_TRACK_b_W64", "MH_TRACK_c_W64", "MH_TRACK_d_W64", 
-          "MH_TRACK_e_W64", "WEIGHT_W64") 
+          "F_CREGION", "F_EDUCCAT", "COVIDFOL_W64", "COVID_MENTAL_W64",
+          "MH_TRACK_a_W64", "MH_TRACK_b_W64", "MH_TRACK_c_W64", 
+          "MH_TRACK_d_W64", "MH_TRACK_e_W64", "WEIGHT_W64") 
 
 pew1 <- read_sav("ATP W64.sav") %>%
   dplyr::select( all_of(vars) ) %>%
@@ -30,6 +29,9 @@ pew2 <- pew1 %>%
     ### media consumption
     nws = ifelse(COVIDFOL_W64 == 1, 1, 0), # 1 = very close
     
+    ### past mental health condition
+    mhc = ifelse(COVID_MENTAL_W64 == 1, 1, 0), # 1 = yes
+    
     ### sociodemographic covariates
     rce = case_when(
       F_RACETHN == 2 ~ 1,              # non-Hispanic Black
@@ -46,7 +48,7 @@ pew2 <- pew1 %>%
     ### weights
     wgt = WEIGHT_W64) %>%
   
-  select(c(dis, nws, rce, fem, age, met, reg, mar, edu, wgt))
+  select(c(dis, nws, rce, fem, age, met, reg, mar, edu, mhc, wgt))
     
 ### select analysis sample for preliminary analysis of media consumption
 ### rescale weights
@@ -70,8 +72,8 @@ dim(pew_old)
 pew_old <- pew_old %>% drop_na(nws)
 dim(pew_old)
 
-# drop missing sociodemographic covariates (marital status and education)
-pew_old <- pew_old %>% drop_na(c(mar, edu))
+# drop missing sociodemographic covariates (marital status, education, mental health condition)
+pew_old <- pew_old %>% drop_na(c(mar, edu, mhc))
 dim(pew_old)
 
 ### rescale weights

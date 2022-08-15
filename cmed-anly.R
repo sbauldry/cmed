@@ -9,6 +9,73 @@ library(margins)
 library(broom)
 library(weights)
 
+
+### load prepared data for analysis
+pew_old <- read_csv("cmed-old-data.csv", 
+                    col_types = list(dis = "d", nws = "f", rce = "f",
+                                     fem = "f", met = "f", reg = "f", 
+                                     mar = "f", edu = "f", mhc = "f",
+                                     rwt = "d")) %>%
+  mutate(nws = fct_relevel(nws, "0", "1"),
+         rce = fct_relevel(rce, "1", "2", "3"),
+         fem = fct_relevel(fem, "0", "1"),
+         met = fct_relevel(met, "0", "1"),
+         reg = fct_relevel(reg, "1", "2", "3", "4"),
+         mar = fct_relevel(mar, "0", "1"),
+         edu = fct_relevel(edu, "1", "2", "3"),
+         mhc = fct_relevel(mhc, "0", "1"))
+
+
+### descriptive statistics (Table 1)
+
+
+
+### predictors of very close media consumption (Table 2)
+nws_m1 <- glm(nws ~ rce + fem + met + reg + mar + edu + mhc, data = pew_old, 
+               family = quasibinomial, weights = rwt)
+summary(nws_m1)
+summary( margins(nws_m1) )
+
+
+### average net effect of very close media consumption (Table 3)
+dis_m1 <- lm(dis ~ nws + rce + fem + edu + mar + met + reg + mhc, data = pew_old, 
+             weights = rwt) 
+summary(dis_m1)
+
+# graph estimates 
+dis_m1_est <- tidy(dis_m1) %>%
+  filter(term != "(Intercept)") %>%
+  mutate(lb = estimate - 1.96*std.error,
+         ub = estimate + 1.96*std.error,
+         id = c(12:1))
+
+fig1 <- ggplot(dis_m1_est, aes(x = factor(id), y = estimate, ymin = lb, ymax = ub)) +
+  geom_pointrange() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "blue") +
+  scale_x_discrete(labels = c("Past mental diagnosis", "South", "West", "Midwest", 
+                              "Metro area", "Married/cohabiting", "College degree +", 
+                              "Some college", "Women", "Non-Hispanic White", 
+                              "Hispanic", "VC media consumption")) +
+  labs(x = "", y = "unstandardized estimate") +
+  coord_flip() +
+  theme_light() +
+  theme(text = element_text(size = 15))
+fig1
+ggsave("cmed-fig1.png", plot = fig1)
+
+
+### subgroup estimates for every close media consumption
+submod <- function(v, i) {
+  m <- lm(dis ~ nws + mar + met + reg + fem + rce + edu + mhc, data = subset(pew_old, v == i), weights = rwt)
+}
+
+submod("fem", 1)
+
+
+
+
+
+
 ### preliminary analysis of predictors of very close media consumption
 pew_full <- read_csv("cmed-full-data.csv", 
                      col_types = list(dis = "d", nws = "f", rce = "f",
@@ -39,27 +106,16 @@ summary( margins(pm1_nws) )
 
 
 ### Primary analysis of older adults
-pew_old <- read_csv("cmed-old-data.csv", 
-                     col_types = list(dis = "d", nws = "f", rce = "f",
-                                      fem = "f", met = "f", reg = "f", 
-                                      mar = "f", edu = "f", rwt = "d"))
-pew_old <- pew_old %>%
-  mutate(nws = fct_relevel(nws, "0", "1"),
-         rce = fct_relevel(rce, "1", "2", "3"),
-         fem = fct_relevel(fem, "0", "1"),
-         met = fct_relevel(met, "0", "1"),
-         reg = fct_relevel(reg, "1", "2", "3", "4"),
-         mar = fct_relevel(mar, "0", "1"),
-         edu = fct_relevel(edu, "1", "2", "3"))
+
 
 # auxiliary analysis of predictors of very close media consumption
-am1_nws <- glm(nws ~ rce + fem + met + reg + mar + edu, data = pew_old, 
+am1_nws <- glm(nws ~ rce + fem + met + reg + mar + edu + mhc, data = pew_old, 
               family = quasibinomial, weights = rwt)
 summary(am1_nws)
 summary( margins(am1_nws) )
 
 # average net effect of media consumption
-m1 <- lm(dis ~ nws + rce + fem + edu + mar + met + reg, data = pew_old, weights = rwt) 
+m1 <- lm(dis ~ nws + rce + fem + edu + mar + met + reg + mhc, data = pew_old, weights = rwt) 
 summary(m1)
 
 # graph estimates for figure 1
@@ -84,19 +140,19 @@ fig1
 ggsave("fig1.png", plot = fig1)
 
 # models stratified by various subsamples
-m2 <- lm(dis ~ nws + mar + met + reg + rce + edu, data = subset(pew_old, fem == 1), weights = rwt)
-m3 <- lm(dis ~ nws + mar + met + reg + rce + edu, data = subset(pew_old, fem == 0), weights = rwt)
+m2 <- lm(dis ~ nws + mar + met + reg + rce + edu + mhc, data = subset(pew_old, fem == 1), weights = rwt)
+m3 <- lm(dis ~ nws + mar + met + reg + rce + edu + mhc, data = subset(pew_old, fem == 0), weights = rwt)
 
-m4 <- lm(dis ~ nws + mar + met + reg + fem + edu, data = subset(pew_old, rce == 2), weights = rwt)
-m5 <- lm(dis ~ nws + mar + met + reg + fem + edu, data = subset(pew_old, rce == 1), weights = rwt)
-m6 <- lm(dis ~ nws + mar + met + reg + fem + edu, data = subset(pew_old, rce == 3), weights = rwt)
+m4 <- lm(dis ~ nws + mar + met + reg + fem + edu + mhc, data = subset(pew_old, rce == 2), weights = rwt)
+m5 <- lm(dis ~ nws + mar + met + reg + fem + edu + mhc, data = subset(pew_old, rce == 1), weights = rwt)
+m6 <- lm(dis ~ nws + mar + met + reg + fem + edu + mhc, data = subset(pew_old, rce == 3), weights = rwt)
 
-m7 <- lm(dis ~ nws + mar + met + reg + fem + rce, data = subset(pew_old, edu == 3), weights = rwt)
-m8 <- lm(dis ~ nws + mar + met + reg + fem + rce, data = subset(pew_old, edu == 2), weights = rwt)
-m9 <- lm(dis ~ nws + mar + met + reg + fem + rce, data = subset(pew_old, edu == 1), weights = rwt)
+m7 <- lm(dis ~ nws + mar + met + reg + fem + rce + mhc, data = subset(pew_old, edu == 3), weights = rwt)
+m8 <- lm(dis ~ nws + mar + met + reg + fem + rce + mhc, data = subset(pew_old, edu == 2), weights = rwt)
+m9 <- lm(dis ~ nws + mar + met + reg + fem + rce + mhc, data = subset(pew_old, edu == 1), weights = rwt)
 
-m10 <- lm(dis ~ nws + met + reg + fem + rce + edu, data = subset(pew_old, mar == 1), weights = rwt)
-m11 <- lm(dis ~ nws + met + reg + fem + rce + edu, data = subset(pew_old, mar == 0), weights = rwt)
+m10 <- lm(dis ~ nws + met + reg + fem + rce + edu + mhc, data = subset(pew_old, mar == 1), weights = rwt)
+m11 <- lm(dis ~ nws + met + reg + fem + rce + edu + mhc, data = subset(pew_old, mar == 0), weights = rwt)
 
 # prepare estimate for figure
 ge <- function(mod, i) {
@@ -104,7 +160,7 @@ ge <- function(mod, i) {
   s <- sqrt( diag(vcov(mod)) )
   u <- e[[2]] + 1.96*s[[2]]
   l <- e[[2]] - 1.96*s[[2]]
-  c <- cbind(id = i, est = e[[2]], lb = l, ub = u)
+  c <- cbind(id = i, est = e[[2]], se = s[[2]], lb = l, ub = u)
   return(c)
 }
 est <- data.frame( rbind( ge(m2, 10), ge(m3, 9), ge(m4, 8), ge(m5, 7), 
