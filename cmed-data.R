@@ -27,30 +27,30 @@ pew2 <- pew1 %>%
           (5 - MH_TRACK_d_W64) + MH_TRACK_e_W64,
     
     ### media consumption
-    nws = ifelse(COVIDFOL_W64 == 1, 1, 0), # 1 = very close
+    nws = as.factor( ifelse(COVIDFOL_W64 == 1, 1, 0) ), # 1 = very close
     
     ### past mental health condition
-    mhc = ifelse(COVID_MENTAL_W64 == 1, 1, 0), # 1 = yes
+    mhc = as.factor( ifelse(COVID_MENTAL_W64 == 1, 1, 0) ), # 1 = yes
     
     ### sociodemographic covariates
-    rce = case_when(
-      F_RACETHN == 2 ~ 1,              # non-Hispanic Black
-      F_RACETHN == 3 ~ 2,              # Hispanic
-      F_RACETHN == 1 ~ 3,              # non-Hispanic White
-      F_RACETHN == 4 ~ 4),             # other race/ethnicity
-    fem = ifelse(F_SEX == 2, 1, 0),    # 1 = female
-    age = F_AGECAT,                    # 1 = 18-29, 2 = 30-49, 3 = 50-64, 4 = 65+
-    met = ifelse(F_METRO == 1, 1, 0),  # 1 = urban
-    reg = F_CREGION,                   # 1 = northeast, 2 = midwest, 3 = south, 4 = west
-    mar = ifelse(F_MARITAL < 3, 1, 0), # 1 = married or cohabiting
-    edu = 4 - F_EDUCCAT,               # 1 = HS or less, 2 = some college, 3 = BA+
+    rce = as.factor( case_when(
+      F_RACETHN == 3 ~ 1,                           # Hispanic
+      F_RACETHN == 2 ~ 2,                           # non-Hispanic Black
+      F_RACETHN == 1 ~ 3,                           # non-Hispanic White
+      F_RACETHN == 4 ~ 4) ),                        # other race/ethnicity
+    fem = as.factor( ifelse(F_SEX == 2, 1, 0) ),    # 1 = female
+    age = F_AGECAT,                                 # 1 = 18-29, 2 = 30-49, 3 = 50-64, 4 = 65+
+    met = as.factor( ifelse(F_METRO == 1, 1, 0) ),  # 1 = urban
+    reg = as.factor( F_CREGION ),                   # 1 = northeast, 2 = midwest, 3 = south, 4 = west
+    mar = as.factor( ifelse(F_MARITAL < 3, 1, 0) ), # 1 = married or cohabiting
+    edu = as.factor( 4 - F_EDUCCAT ),               # 1 = HS or less, 2 = some college, 3 = BA+
     
     ### weights
     wgt = WEIGHT_W64) %>%
   
   select(c(dis, nws, rce, fem, age, met, reg, mar, edu, mhc, wgt))
     
-### select analysis sample for preliminary analysis of media consumption
+### select analysis sample for preliminary analysis of full sample
 ### rescale weights
 pew_full <- pew2 %>%
   drop_na() %>%
@@ -58,7 +58,7 @@ pew_full <- pew2 %>%
   select(-wgt)
 dim(pew_full)
 
-### select analysis sample for primary analysis
+### select analysis sample for primary analysis of older adults
 pew_old <- pew2 %>%
   filter(age == 4 & rce != 4) %>%
   select(-age)
@@ -72,7 +72,7 @@ dim(pew_old)
 pew_old <- pew_old %>% drop_na(nws)
 dim(pew_old)
 
-# drop missing sociodemographic covariates (marital status, education, mental health condition)
+# drop missing covariates (marital status, education, mental health condition)
 pew_old <- pew_old %>% drop_na(c(mar, edu, mhc))
 dim(pew_old)
 

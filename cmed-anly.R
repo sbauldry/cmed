@@ -11,7 +11,7 @@ library(weights)
 
 
 ### load prepared data for analysis
-pew_old <- read_csv("cmed-old-data.csv", 
+pew_old_chk <- read_csv("cmed-old-data-chk.csv", 
                     col_types = list(dis = "d", nws = "f", rce = "f",
                                      fem = "f", met = "f", reg = "f", 
                                      mar = "f", edu = "f", mhc = "f",
