@@ -45,10 +45,25 @@ pew2 <- pew1 %>%
     mar = as.factor( ifelse(F_MARITAL < 3, 1, 0) ), # 1 = married or cohabiting
     edu = as.factor( 4 - F_EDUCCAT ),               # 1 = HS or less, 2 = some college, 3 = BA+
     
+    ### creating numeric indicators for ease of programming
+    nws1 = ifelse(nws == 1, 1, 0),
+    fem1 = ifelse(fem == 1, 1, 0),
+    met1 = ifelse(met == 1, 1, 0),
+    mar1 = ifelse(mar == 1, 1, 0),
+    rce2 = ifelse(rce == 2, 1, 0),
+    rce3 = ifelse(rce == 3, 1, 0), 
+    edu2 = ifelse(edu == 2, 1, 0),
+    edu3 = ifelse(edu == 3, 1, 0),
+    reg2 = ifelse(reg == 2, 1, 0),
+    reg3 = ifelse(reg == 3, 1, 0),
+    reg4 = ifelse(reg == 4, 1, 0),
+    mhc1 = ifelse(mhc == 1, 1, 0),
+    
     ### weights
     wgt = WEIGHT_W64) %>%
   
-  select(c(dis, nws, rce, fem, age, met, reg, mar, edu, mhc, wgt))
+  select(c(dis, nws, rce, fem, age, met, reg, mar, edu, mhc, nws1, fem1, met1, mar1, 
+           rce2, rce3, edu2, edu3, reg2, reg3, reg4, mhc1, wgt))
     
 ### select analysis sample for preliminary analysis of full sample
 ### rescale weights
