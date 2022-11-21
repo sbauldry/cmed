@@ -50,8 +50,6 @@ tt <- wtd.t.test(pew_vc$dis, pew_nvc$dis, weight = pew_vc$rwt, weighty = pew_nvc
 
 c(mn_dis, sd_dis, mn_dis_vc, sd_dis_vc, mn_dis_nvc, sd_dis_nvc, tt[[2]])
 
-
-
 # other covariates
 pr_var <- function(x, y, z) {
   a <- wpct(x, weight = pew$rwt)
@@ -69,6 +67,19 @@ pr_var(pew$met, pew_vc$met, pew_nvc$met)
 pr_var(pew$reg, pew_vc$reg, pew_nvc$reg)
 pr_var(pew$mhc, pew_vc$mhc, pew_nvc$mhc)
 
+
+# psychological distress items
+wm_pdi <- function(x) {
+  a <- wtd.mean(x, weight = pew$rwt)
+  b <- sqrt( wtd.var(x, weight = pew$rwt) )
+  c(a, b)
+}
+
+wm_pdi(pew$dis1)
+wm_pdi(pew$dis2)
+wm_pdi(pew$dis3)
+wm_pdi(pew$dis4)
+wm_pdi(pew$dis5)
 
 
 ### average net effect of very close media consumption (Figure 1)
