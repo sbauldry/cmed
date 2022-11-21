@@ -1,9 +1,8 @@
-### Purpose: estimate reliability for psychological distress scale
-### Author: S Bauldry
-### Date: August 25, 2020
+### Purpose: Estimate reliability for psychological distress scale
+### Author:  S Bauldry
+### Date:    November 20, 2022
 
 ### set working directory and load packages
-rm(list = ls())
 setwd("~/desktop")
 library(tidyverse)
 library(lavaan)
@@ -11,29 +10,24 @@ library(polycor)
 library(pbivnorm)
 
 
-### read prepared data
-pew <- read_csv("cmed-data.csv", col_types = list("sex" = col_factor(), "rac" = col_factor(), 
-                                                  "met" = col_factor(), "reg" = col_factor(),
-                                                  "edu" = col_factor(), "mar" = col_factor(),
-                                                  "nws" = col_factor()))
-summary(pew)
-
+### Loading prepared data
+pew <- read_csv("cmed-old-data.csv")
 
 ### set indicators as ordered
-pew[, c("pd1", "pd2", "pd3", "pd4", "pd5")] <- lapply(pew[, c("pd1", "pd2", "pd3", "pd4", "pd5")], ordered)
-
+pew[, c("dis1", "dis2", "dis3", "dis4", "dis5")] <- 
+  lapply(pew[, c("dis1", "dis2", "dis3", "dis4", "dis5")], ordered)
 
 ### obtain polychoric correlation matrix
-pc12 <- polychor(pew$pd1, pew$pd2)
-pc13 <- polychor(pew$pd1, pew$pd3)
-pc14 <- polychor(pew$pd1, pew$pd4)
-pc15 <- polychor(pew$pd1, pew$pd5)
-pc23 <- polychor(pew$pd2, pew$pd3)
-pc24 <- polychor(pew$pd2, pew$pd4)
-pc25 <- polychor(pew$pd2, pew$pd5)
-pc34 <- polychor(pew$pd3, pew$pd4)
-pc35 <- polychor(pew$pd3, pew$pd5)
-pc45 <- polychor(pew$pd4, pew$pd5)
+pc12 <- polychor(pew$dis1, pew$dis2)
+pc13 <- polychor(pew$dis1, pew$dis3)
+pc14 <- polychor(pew$dis1, pew$dis4)
+pc15 <- polychor(pew$dis1, pew$dis5)
+pc23 <- polychor(pew$dis2, pew$dis3)
+pc24 <- polychor(pew$dis2, pew$dis4)
+pc25 <- polychor(pew$dis2, pew$dis5)
+pc34 <- polychor(pew$dis3, pew$dis4)
+pc35 <- polychor(pew$dis3, pew$dis5)
+pc45 <- polychor(pew$dis4, pew$dis5)
 
 pcm <- rbind( c(1, pc12, pc13, pc14, pc15), c(pc12, 1, pc23, pc24, pc25), 
               c(pc13, pc23, 1, pc34, pc35), c(pc14, pc24, pc34, 1, pc45), 
@@ -42,7 +36,7 @@ pcm <- rbind( c(1, pc12, pc13, pc14, pc15), c(pc12, 1, pc23, pc24, pc25),
 
 ### obtain thresholds and factor loadings
 mod1 <- '
-  PD =~ pd1 + pd2 + pd3 + pd4 + pd5
+  PD =~ dis1 + dis2 + dis3 + dis4 + dis5
 '
 fit1 <- cfa(mod1, data = pew)
 sde <- standardizedSolution(fit1)

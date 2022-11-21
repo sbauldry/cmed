@@ -1,6 +1,6 @@
-### Purpose: Prepare data for analysis of covid media consumption and distress
+### Purpose: Prepare PEW data for analysis of covid media consumption and distress
 ### Author:  S Bauldry
-### Date:    August 14, 2022
+### Date:    November 20, 2022
 
 setwd("~/desktop")
 library(tidyverse)
@@ -20,11 +20,16 @@ pew1 <- read_sav("ATP W64.sav") %>%
 
 ### Prepare variables for analysis
 pew2 <- pew1 %>%
+  
+  ### keep individual indicators to estimate reliability
+  rename(dis1 = MH_TRACK_a_W64, dis2 = MH_TRACK_b_W64, dis3 = MH_TRACK_c_W64, 
+         dis5 = MH_TRACK_e_W64) %>%
+  
   mutate(
     
     ### psychological distress
-    dis = MH_TRACK_a_W64 + MH_TRACK_b_W64 + MH_TRACK_c_W64 +
-          (5 - MH_TRACK_d_W64) + MH_TRACK_e_W64,
+    dis4 = 5 - MH_TRACK_d_W64,
+    dis  = dis1 + dis2 + dis3 + dis4 + dis5,
     
     ### media consumption
     nws = as.factor( ifelse(COVIDFOL_W64 == 1, 1, 0) ), # 1 = very close
@@ -62,16 +67,11 @@ pew2 <- pew1 %>%
     ### weights
     wgt = WEIGHT_W64) %>%
   
-  select(c(dis, nws, rce, fem, age, met, reg, mar, edu, mhc, nws1, fem1, met1, mar1, 
-           rce2, rce3, edu2, edu3, reg2, reg3, reg4, mhc1, wgt))
     
-### select analysis sample for preliminary analysis of full sample
-### rescale weights
-pew_full <- pew2 %>%
-  drop_na() %>%
-  mutate(rwt = wgt/sum(wgt)*n()) %>%
-  select(-wgt)
-dim(pew_full)
+  
+  select(c(dis, nws, rce, fem, age, met, reg, mar, edu, mhc, nws1, fem1, met1, mar1, 
+           rce2, rce3, edu2, edu3, reg2, reg3, reg4, mhc1, wgt, dis1, dis2, dis3,
+           dis4, dis5))
 
 ### select analysis sample for primary analysis of older adults
 pew_old <- pew2 %>%
@@ -97,5 +97,4 @@ pew_old <- pew_old %>%
   select(-wgt)
 
 ### save data for analysis
-write_csv(pew_full, "cmed-full-data.csv")
 write_csv(pew_old, "cmed-old-data.csv")

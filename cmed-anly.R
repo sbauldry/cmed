@@ -1,6 +1,6 @@
 ### Purpose: Prepare analysis of covid media consumption and distress
 ### Author:  S Bauldry
-### Date:    September 5, 2022
+### Date:    November 21, 2022
 
 setwd("~/desktop")
 library(tidyverse)
@@ -46,14 +46,19 @@ sd_dis_vc <- sqrt( wtd.var(pew_vc$dis, weights = pew_vc$rwt) )
 mn_dis_nvc <- wtd.mean(pew_nvc$dis, weights = pew_nvc$rwt)
 sd_dis_nvc <- sqrt( wtd.var(pew_nvc$dis, weights = pew_nvc$rwt) )
 
-c(mn_dis, sd_dis, mn_dis_vc, sd_dis_vc, mn_dis_nvc, sd_dis_nvc)
+tt <- wtd.t.test(pew_vc$dis, pew_nvc$dis, weight = pew_vc$rwt, weighty = pew_nvc$rwt)
+
+c(mn_dis, sd_dis, mn_dis_vc, sd_dis_vc, mn_dis_nvc, sd_dis_nvc, tt[[2]])
+
+
 
 # other covariates
 pr_var <- function(x, y, z) {
   a <- wpct(x, weight = pew$rwt)
   b <- wpct(y, weight = pew_vc$rwt)
   c <- wpct(z, weight = pew_nvc$rwt)
-  c(a, b, c)
+  d <- wtd.chi.sq(x, pew$nws, weight = pew$rwt)
+  c(a, b, c, d[3])
 }
 
 pr_var(pew$fem, pew_vc$fem, pew_nvc$fem)
@@ -90,6 +95,15 @@ fig1 <- ggplot(dis_m1_est, aes(x = factor(id), y = estimate, ymin = lb, ymax = u
   theme(text = element_text(size = 15))
 fig1
 ggsave("cmed-fig1.pdf", plot = fig1)
+
+
+### supplementary analysis requested by reviewer
+pew <- pew %>%
+  mutate(hdis = ifelse(ntile(dis, 4) == 4, 1, 0))
+
+hdis_m1 <- glm(hdis ~ nws + rce + fem + edu + mar + met + reg + mhc, data = pew, 
+               weights = rwt, family = quasibinomial)
+summary(hdis_m1)
 
 
 ### subgroup estimates for very close media consumption (Figure 2)
