@@ -60,11 +60,18 @@ pr_var <- function(x, y, z) {
 }
 
 pr_var(pew$fem, pew_vc$fem, pew_nvc$fem)
-pr_var(pew$rce, pew_vc$rce, pew_nvc$rce)
-pr_var(pew$edu, pew_vc$edu, pew_nvc$edu)
+pr_var(pew$rce1, pew_vc$rce1, pew_nvc$rce1)
+pr_var(pew$rce2, pew_vc$rce2, pew_nvc$rce2)
+pr_var(pew$rce3, pew_vc$rce3, pew_nvc$rce3)
+pr_var(pew$edu1, pew_vc$edu1, pew_nvc$edu1)
+pr_var(pew$edu2, pew_vc$edu2, pew_nvc$edu2)
+pr_var(pew$edu3, pew_vc$edu3, pew_nvc$edu3)
 pr_var(pew$mar, pew_vc$mar, pew_nvc$mar)
 pr_var(pew$met, pew_vc$met, pew_nvc$met)
-pr_var(pew$reg, pew_vc$reg, pew_nvc$reg)
+pr_var(pew$reg1, pew_vc$reg1, pew_nvc$reg1)
+pr_var(pew$reg2, pew_vc$reg2, pew_nvc$reg2)
+pr_var(pew$reg3, pew_vc$reg3, pew_nvc$reg3)
+pr_var(pew$reg4, pew_vc$reg1, pew_nvc$reg4)
 pr_var(pew$mhc, pew_vc$mhc, pew_nvc$mhc)
 
 

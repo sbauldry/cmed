@@ -50,15 +50,18 @@ pew2 <- pew1 %>%
     mar = as.factor( ifelse(F_MARITAL < 3, 1, 0) ), # 1 = married or cohabiting
     edu = as.factor( 4 - F_EDUCCAT ),               # 1 = HS or less, 2 = some college, 3 = BA+
     
-    ### creating numeric indicators for ease of programming
+    ### creating numeric indicators for some commands
     nws1 = ifelse(nws == 1, 1, 0),
     fem1 = ifelse(fem == 1, 1, 0),
     met1 = ifelse(met == 1, 1, 0),
     mar1 = ifelse(mar == 1, 1, 0),
+    rce1 = ifelse(rce == 1, 1, 0),
     rce2 = ifelse(rce == 2, 1, 0),
     rce3 = ifelse(rce == 3, 1, 0), 
+    edu1 = ifelse(edu == 1, 1, 0),
     edu2 = ifelse(edu == 2, 1, 0),
     edu3 = ifelse(edu == 3, 1, 0),
+    reg1 = ifelse(reg == 1, 1, 0),
     reg2 = ifelse(reg == 2, 1, 0),
     reg3 = ifelse(reg == 3, 1, 0),
     reg4 = ifelse(reg == 4, 1, 0),
@@ -70,8 +73,8 @@ pew2 <- pew1 %>%
     
   
   select(c(dis, nws, rce, fem, age, met, reg, mar, edu, mhc, nws1, fem1, met1, mar1, 
-           rce2, rce3, edu2, edu3, reg2, reg3, reg4, mhc1, wgt, dis1, dis2, dis3,
-           dis4, dis5))
+           rce1, rce2, rce3, edu1, edu2, edu3, reg1, reg2, reg3, reg4, mhc1, 
+           wgt, dis1, dis2, dis3, dis4, dis5))
 
 ### select analysis sample for primary analysis of older adults
 pew_old <- pew2 %>%
